@@ -55,6 +55,9 @@ export MARIADB_URL="https://downloads.mariadb.com/MariaDB/mariadb_repo_setup"
 export GITHUB_BASE_URL=${GITHUB_BASE_URL:-"https://raw.githubusercontent.com/pterodactyl-installer/pterodactyl-installer"}
 export GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
 
+# Local script directory (set by install.sh, fallback to this script's location)
+export SCRIPT_DIR=${SCRIPT_DIR:-"$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"}
+
 # Colors
 COLOR_YELLOW='\033[1;33m'
 COLOR_GREEN='\033[0;32m'
@@ -153,19 +156,16 @@ get_latest_versions() {
 }
 
 update_lib_source() {
-  GITHUB_URL="$GITHUB_BASE_URL/$GITHUB_SOURCE"
-  rm -rf /tmp/lib.sh
-  curl -sSL -o /tmp/lib.sh "$GITHUB_URL"/lib/lib.sh
-  # shellcheck source=lib/lib.sh
-  source /tmp/lib.sh
+  # Re-source lib.sh from local directory
+  source "$SCRIPT_DIR/lib/lib.sh"
 }
 
 run_installer() {
-  bash <(curl -sSL "$GITHUB_URL/installers/$1.sh")
+  bash "$SCRIPT_DIR/installers/$1.sh"
 }
 
 run_ui() {
-  bash <(curl -sSL "$GITHUB_URL/ui/$1.sh")
+  bash "$SCRIPT_DIR/ui/$1.sh"
 }
 
 array_contains_element() {
