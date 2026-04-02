@@ -568,6 +568,7 @@ fedora)
   [ "$OS_VER_MAJOR" == "40" ] && SUPPORTED=true
   [ "$OS_VER_MAJOR" == "41" ] && SUPPORTED=true
   [ "$OS_VER_MAJOR" == "42" ] && SUPPORTED=true
+  [ "$OS_VER_MAJOR" == "43" ] && SUPPORTED=true
   ;;
 *)
   SUPPORTED=false

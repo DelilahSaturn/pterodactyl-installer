@@ -53,7 +53,8 @@ List of supported installation setups for panel and Wings (installations support
 |                  | 40      | :white_check_mark: | 8.3         |
 |                  | 41      | :white_check_mark: | 8.3         |
 |                  | 42      | :white_check_mark: | 8.3         |
-| Nobara           | 38-42   | :white_check_mark: | 8.3         |
+|                  | 43      | :white_check_mark: | 8.3         |
+| Nobara           | 38-43   | :white_check_mark: | 8.3         |
 
 _\* Indicates an operating system and release that previously was supported by this script._
 
