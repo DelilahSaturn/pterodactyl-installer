@@ -201,6 +201,14 @@ letsencrypt() {
 configure_mysql() {
   output "Configuring MySQL.."
 
+  # Ensure MariaDB is running (it may have been installed by the panel
+  # installer but not started/enabled by the wings enable_services step)
+  if ! systemctl is-active --quiet mariadb; then
+    output "Starting MariaDB service..."
+    systemctl enable mariadb
+    systemctl start mariadb
+  fi
+
   create_db_user "$MYSQL_DBHOST_USER" "$MYSQL_DBHOST_PASSWORD" "$MYSQL_DBHOST_HOST"
   grant_all_privileges "*" "$MYSQL_DBHOST_USER" "$MYSQL_DBHOST_HOST"
 
@@ -216,7 +224,7 @@ configure_mysql() {
       ;;
     esac
 
-    systemctl restart mysqld
+    systemctl restart mariadb
   fi
 
   success "MySQL configured!"
