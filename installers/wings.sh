@@ -74,6 +74,9 @@ dep_install() {
 
   [ "$CONFIGURE_FIREWALL" == true ] && install_firewall && firewall_ports
 
+  # Track whether we need to install Docker CE from Docker's repo
+  local INSTALL_DOCKER_CE=true
+
   case "$OS" in
   ubuntu | debian)
     install_packages "ca-certificates gnupg lsb-release"
@@ -97,11 +100,23 @@ dep_install() {
 
   fedora)
     install_packages "dnf-plugins-core"
-    # DNF5 (Fedora 41+) uses different config-manager syntax than DNF4
-    if dnf --version 2>/dev/null | grep -qi "dnf5"; then
-      dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
+
+    # Check if moby-engine (Fedora/Nobara's Docker build) is already installed.
+    # moby-engine is functionally equivalent to docker-ce and conflicts with it,
+    # so we skip Docker CE repo setup and use the existing engine instead.
+    if rpm -q moby-engine &>/dev/null; then
+      output "Detected moby-engine (Fedora Docker) already installed — skipping Docker CE repo."
+      INSTALL_DOCKER_CE=false
+      # Ensure containerd is present (Fedora package name)
+      install_packages "containerd"
     else
-      dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+      # DNF5 (Fedora 41+) uses different config-manager syntax than DNF4
+      # Detect DNF5 by checking binary path (avoids hanging on repo refresh)
+      if [ -x /usr/bin/dnf5 ] || readlink -f "$(command -v dnf)" 2>/dev/null | grep -q "dnf5"; then
+        dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
+      else
+        dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+      fi
     fi
 
     install_packages "device-mapper-persistent-data lvm2"
@@ -111,8 +126,10 @@ dep_install() {
   # Update the new repos
   update_repos
 
-  # Install dependencies
-  install_packages "docker-ce docker-ce-cli containerd.io"
+  # Install Docker CE only if we didn't detect an existing compatible engine
+  if [ "$INSTALL_DOCKER_CE" == true ]; then
+    install_packages "docker-ce docker-ce-cli containerd.io"
+  fi
 
   # Install mariadb if needed
   [ "$INSTALL_MARIADB" == true ] && install_packages "mariadb-server"
