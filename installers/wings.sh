@@ -32,7 +32,7 @@ set -e
 fn_exists() { declare -F "$1" >/dev/null; }
 if ! fn_exists lib_loaded; then
   # shellcheck source=lib/lib.sh
-  source /tmp/lib.sh || source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)/lib/lib.sh"
+  [ -f /tmp/lib.sh ] && source /tmp/lib.sh || source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)/lib/lib.sh"
   ! fn_exists lib_loaded && echo "* ERROR: Could not load lib script" && exit 1
 fi
 
@@ -97,7 +97,12 @@ dep_install() {
 
   fedora)
     install_packages "dnf-plugins-core"
-    dnf config-manager --add-repo=https://download.docker.com/linux/fedora/docker-ce.repo
+    # DNF5 (Fedora 41+) uses different config-manager syntax than DNF4
+    if dnf --version 2>/dev/null | grep -qi "dnf5"; then
+      dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
+    else
+      dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+    fi
 
     install_packages "device-mapper-persistent-data lvm2"
     ;;
