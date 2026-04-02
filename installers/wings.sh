@@ -94,6 +94,13 @@ dep_install() {
 
     install_packages "device-mapper-persistent-data lvm2"
     ;;
+
+  fedora)
+    install_packages "dnf-plugins-core"
+    dnf config-manager --add-repo=https://download.docker.com/linux/fedora/docker-ce.repo
+
+    install_packages "device-mapper-persistent-data lvm2"
+    ;;
   esac
 
   # Update the new repos
@@ -182,7 +189,7 @@ configure_mysql() {
     debian | ubuntu)
       sed -i 's/127.0.0.1/0.0.0.0/g' /etc/mysql/mariadb.conf.d/50-server.cnf
       ;;
-    rocky | almalinux)
+    rocky | almalinux | fedora)
       sed -ne 's/^#bind-address=0.0.0.0$/bind-address=0.0.0.0/' /etc/my.cnf.d/mariadb-server.cnf
       ;;
     esac

@@ -48,6 +48,12 @@ List of supported installation setups for panel and Wings (installations support
 |                  | 9       | :white_check_mark: | 8.3         |
 | AlmaLinux        | 8       | :white_check_mark: | 8.3         |
 |                  | 9       | :white_check_mark: | 8.3         |
+| Fedora           | 38      | :white_check_mark: | 8.3         |
+|                  | 39      | :white_check_mark: | 8.3         |
+|                  | 40      | :white_check_mark: | 8.3         |
+|                  | 41      | :white_check_mark: | 8.3         |
+|                  | 42      | :white_check_mark: | 8.3         |
+| Nobara           | 38-42   | :white_check_mark: | 8.3         |
 
 _\* Indicates an operating system and release that previously was supported by this script._
 

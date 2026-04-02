@@ -37,7 +37,7 @@ LOG_PATH="/var/log/pterodactyl-installer.log"
 # check for curl
 if ! [ -x "$(command -v curl)" ]; then
   echo "* curl is required in order for this script to work."
-  echo "* install using apt (Debian and derivatives) or yum/dnf (CentOS)"
+  echo "* install using apt (Debian and derivatives) or yum/dnf (CentOS/Fedora)"
   exit 1
 fi
 

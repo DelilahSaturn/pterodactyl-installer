@@ -250,7 +250,7 @@ update_repos() {
         return 1
       fi
       ;;
-    centos | almalinux | rockylinux)
+    centos | almalinux | rockylinux | rocky | fedora)
       # Skip since these distros auto-refresh metadata
       output "Skipping repository update (handled automatically on $OS)."
       ;;
@@ -276,7 +276,7 @@ install_packages() {
   ubuntu | debian)
     eval apt-get -y $args install "$1"
     ;;
-  rocky | almalinux)
+  rocky | almalinux | fedora)
     eval dnf -y $args install "$1"
     ;;
   esac
@@ -366,7 +366,7 @@ ask_firewall() {
       eval "$__resultvar="'true'""
     fi
     ;;
-  rocky | almalinux)
+  rocky | almalinux | fedora)
     echo -e -n "* Do you want to automatically configure firewall-cmd (firewall)? (y/N): "
     read -r CONFIRM_FIREWALL_CMD
 
@@ -393,10 +393,10 @@ install_firewall() {
     success "Enabled Uncomplicated Firewall (UFW)"
 
     ;;
-  rocky | almalinux)
+  rocky | almalinux | fedora)
 
     output ""
-    output "Installing FirewallD"+
+    output "Installing FirewallD"
 
     if ! [ -x "$(command -v firewall-cmd)" ]; then
       install_packages "firewalld" true
@@ -418,7 +418,7 @@ firewall_allow_ports() {
     done
     ufw --force reload
     ;;
-  rocky | almalinux)
+  rocky | almalinux | fedora)
     for port in $1; do
       firewall-cmd --zone=public --add-port="$port"/tcp --permanent
     done
@@ -492,6 +492,15 @@ if [ -f /etc/os-release ]; then
   . /etc/os-release
   OS=$(echo "$ID" | awk '{print tolower($0)}')
   OS_VER=$VERSION_ID
+  # Map Nobara (and other Fedora derivatives) to fedora
+  if [ -n "$ID_LIKE" ]; then
+    ID_LIKE_LOWER=$(echo "$ID_LIKE" | awk '{print tolower($0)}')
+    case "$OS" in
+    nobara)
+      OS="fedora"
+      ;;
+    esac
+  fi
 elif type lsb_release >/dev/null 2>&1; then
   # linuxbase.org
   OS=$(lsb_release -si | awk '{print tolower($0)}')
@@ -552,6 +561,13 @@ debian)
 rocky | almalinux)
   [ "$OS_VER_MAJOR" == "8" ] && SUPPORTED=true
   [ "$OS_VER_MAJOR" == "9" ] && SUPPORTED=true
+  ;;
+fedora)
+  [ "$OS_VER_MAJOR" == "38" ] && SUPPORTED=true
+  [ "$OS_VER_MAJOR" == "39" ] && SUPPORTED=true
+  [ "$OS_VER_MAJOR" == "40" ] && SUPPORTED=true
+  [ "$OS_VER_MAJOR" == "41" ] && SUPPORTED=true
+  [ "$OS_VER_MAJOR" == "42" ] && SUPPORTED=true
   ;;
 *)
   SUPPORTED=false

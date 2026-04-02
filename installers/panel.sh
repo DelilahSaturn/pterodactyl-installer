@@ -104,7 +104,7 @@ ptdl_dl() {
 
 install_composer_deps() {
   output "Installing composer dependencies.."
-  [ "$OS" == "rocky" ] || [ "$OS" == "almalinux" ] && export PATH=/usr/local/bin:$PATH
+  [ "$OS" == "rocky" ] || [ "$OS" == "almalinux" ] || [ "$OS" == "fedora" ] && export PATH=/usr/local/bin:$PATH
   COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader
   success "Installed composer dependencies!"
 }
@@ -163,7 +163,7 @@ set_folder_permissions() {
   debian | ubuntu)
     chown -R www-data:www-data ./*
     ;;
-  rocky | almalinux)
+  rocky | almalinux | fedora)
     chown -R nginx:nginx ./*
     ;;
   esac
@@ -189,7 +189,7 @@ install_pteroq() {
   debian | ubuntu)
     sed -i -e "s@<user>@www-data@g" /etc/systemd/system/pteroq.service
     ;;
-  rocky | almalinux)
+  rocky | almalinux | fedora)
     sed -i -e "s@<user>@nginx@g" /etc/systemd/system/pteroq.service
     ;;
   esac
@@ -208,7 +208,7 @@ enable_services() {
     systemctl enable redis-server
     systemctl start redis-server
     ;;
-  rocky | almalinux)
+  rocky | almalinux | fedora)
     systemctl enable redis
     systemctl start redis
     ;;
@@ -261,6 +261,24 @@ alma_rocky_dep() {
   dnf module enable -y php:remi-8.3
 }
 
+fedora_dep() {
+  # SELinux tools
+  install_packages "policycoreutils selinux-policy selinux-policy-targeted \
+    setroubleshoot-server setools setools-console mcstrans"
+
+  # Fedora ships PHP 8.3+ in its default repos, no remi needed
+  # Install Remi repo only if the default PHP version is too old
+  local php_ver
+  php_ver=$(dnf info php 2>/dev/null | grep -i "^Version" | head -1 | awk '{print $3}' | cut -d. -f1,2)
+  if [[ -n "$php_ver" ]] && [[ "$(echo "$php_ver >= 8.3" | bc 2>/dev/null)" == "1" ]]; then
+    output "PHP $php_ver available in default Fedora repos."
+  else
+    output "Adding Remi repo for PHP 8.3..."
+    install_packages "https://rpms.remirepo.net/fedora/remi-release-$OS_VER_MAJOR.rpm"
+    dnf module enable -y php:remi-8.3
+  fi
+}
+
 dep_install() {
   output "Installing dependencies for $OS $OS_VER..."
 
@@ -292,6 +310,25 @@ dep_install() {
 
     # Install dependencies
     install_packages "php php-{common,fpm,cli,json,mysqlnd,mcrypt,gd,mbstring,pdo,zip,bcmath,dom,opcache,posix} \
+      mariadb mariadb-server \
+      nginx \
+      redis \
+      zip unzip tar \
+      git cronie"
+
+    [ "$CONFIGURE_LETSENCRYPT" == true ] && install_packages "certbot python3-certbot-nginx"
+
+    # Allow nginx
+    selinux_allow
+
+    # Create config for php fpm
+    php_fpm_conf
+    ;;
+  fedora)
+    fedora_dep
+
+    # Install dependencies
+    install_packages "php php-{common,fpm,cli,json,mysqlnd,gd,mbstring,pdo,zip,bcmath,dom,opcache,posix,xml} \
       mariadb mariadb-server \
       nginx \
       redis \
@@ -367,7 +404,7 @@ configure_nginx() {
     CONFIG_PATH_AVAIL="/etc/nginx/sites-available"
     CONFIG_PATH_ENABL="/etc/nginx/sites-enabled"
     ;;
-  rocky | almalinux)
+  rocky | almalinux | fedora)
     PHP_SOCKET="/var/run/php-fpm/pterodactyl.sock"
     CONFIG_PATH_AVAIL="/etc/nginx/conf.d"
     CONFIG_PATH_ENABL="$CONFIG_PATH_AVAIL"
